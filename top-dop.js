@@ -1,7 +1,4 @@
-/* build: `node build.js modules=ALL exclude=json,gestures minifier=uglifyjs` */
-/*! Fabric.js Copyright 2008-2015, Printio (Juriy Zaytsev, Maxim Chernyak) */
-
-var fabric = fabric || { version: "1.6.3" };
+const fabric = fabric || { version: "1.6.3" };
 if (typeof exports !== 'undefined') {
     exports.fabric = fabric;
 }
@@ -112,7 +109,7 @@ fabric.devicePixelRatio = fabric.window.devicePixelRatio ||
         }
         // one object with key/value pairs was passed
         if (arguments.length === 1) {
-            for (var prop in eventName) {
+            for (let prop in eventName) {
                 this.on(prop, eventName[prop]);
             }
         }
@@ -149,7 +146,7 @@ fabric.devicePixelRatio = fabric.window.devicePixelRatio ||
         }
         // one object with key/value pairs was passed
         else if (arguments.length === 1 && typeof arguments[0] === 'object') {
-            for (var prop in eventName) {
+            for (let prop in eventName) {
                 _removeEventListener.call(this, prop, eventName[prop]);
             }
         }
@@ -179,7 +176,7 @@ fabric.devicePixelRatio = fabric.window.devicePixelRatio ||
             return;
         }
 
-        for (var i = 0, len = listenersForEvent.length; i < len; i++) {
+        for (let i = 0, len = listenersForEvent.length; i < len; i++) {
             listenersForEvent[i] && listenersForEvent[i].call(this, options || { });
         }
         this.__eventListeners[eventName] = listenersForEvent.filter(function(value) {
@@ -218,7 +215,7 @@ fabric.Collection = {
      */
     add: function () {
         this._objects.push.apply(this._objects, arguments);
-        for (var i = 0, length = arguments.length; i < length; i++) {
+        for (let i = 0, length = arguments.length; i < length; i++) {
             this._onObjectAdded(arguments[i]);
         }
         this.renderOnAddRemove && this.renderAll();
@@ -235,7 +232,7 @@ fabric.Collection = {
      * @chainable
      */
     insertAt: function (object, index, nonSplicing) {
-        var objects = this.getObjects();
+        const objects = this.getObjects();
         if (nonSplicing) {
             objects[index] = object;
         }
@@ -254,10 +251,10 @@ fabric.Collection = {
      * @chainable
      */
     remove: function() {
-        var objects = this.getObjects(),
+        const objects = this.getObjects(),
             index;
 
-        for (var i = 0, length = arguments.length; i < length; i++) {
+        for (let i = 0, length = arguments.length; i < length; i++) {
             index = objects.indexOf(arguments[i]);
 
             // only call onObjectRemoved if an object was actually removed
@@ -284,8 +281,8 @@ fabric.Collection = {
      * @return {Self} thisArg
      */
     forEachObject: function(callback, context) {
-        var objects = this.getObjects(),
-            i = objects.length;
+        const objects = this.getObjects();
+        let i = objects.length;
         while (i--) {
             callback.call(context, objects[i], i, objects);
         }
@@ -356,7 +353,7 @@ fabric.Collection = {
 
 (function(global) {
 
-    var sqrt = Math.sqrt,
+    const sqrt = Math.sqrt,
         atan2 = Math.atan2,
         pow = Math.pow,
         abs = Math.abs,
@@ -377,7 +374,7 @@ fabric.Collection = {
          * @return {Array} original array
          */
         removeFromArray: function(array, value) {
-            var idx = array.indexOf(value);
+            const idx = array.indexOf(value);
             if (idx !== -1) {
                 array.splice(idx, 1);
             }
@@ -429,7 +426,7 @@ fabric.Collection = {
          */
         rotatePoint: function(point, origin, radians) {
             point.subtractEquals(origin);
-            var v = fabric.util.rotateVector(point, radians);
+            const v = fabric.util.rotateVector(point, radians);
             return new fabric.Point(v.x, v.y).addEquals(origin);
         },
 
@@ -442,7 +439,7 @@ fabric.Collection = {
          * @return {Object} The new rotated point
          */
         rotateVector: function(vector, radians) {
-            var sin = Math.sin(radians),
+            const sin = Math.sin(radians),
                 cos = Math.cos(radians),
                 rx = vector.x * cos - vector.y * sin,
                 ry = vector.x * sin + vector.y * cos;
@@ -481,7 +478,7 @@ fabric.Collection = {
          * @return {Object} Object with left, top, width, height properties
          */
         makeBoundingBoxFromPoints: function(points) {
-            var xPoints = [points[0].x, points[1].x, points[2].x, points[3].x],
+            const xPoints = [points[0].x, points[1].x, points[2].x, points[3].x],
                 minX = fabric.util.array.min(xPoints),
                 maxX = fabric.util.array.max(xPoints),
                 width = Math.abs(minX - maxX),
@@ -1001,6 +998,101 @@ fabric.Collection = {
             if (fabric.charWidthsCache[fontFamily]) {
                 fabric.charWidthsCache[fontFamily] = { };
             }
+        },
+
+        /**
+         * Parse recalculatePoints attribute
+         * @param {Object} activeObject to be parsed
+         * @return {Object} an object calculated points
+         */
+        recalculatePoints(activeObject) {
+            if (!activeObject.points) {
+                return;
+            }
+    
+            let id = 0;
+    
+            const options = {
+                fill: 'transparent',
+                stroke: 'blue',
+                type: 'line',
+                strokeWidth: 10,
+                perPixelTargetFind: false,
+                hasControls: false,
+                hasBorders: false,
+                lockMovementX: true,
+                lockMovementY: true,
+                lockScalingX: true,
+                lockScalingY: true,
+                lockRotation: true,
+                originX: 'center',
+                originY: 'center',
+                prevPoint: 0
+            };
+    
+            const lines = [];
+            const linesIds = [];
+    
+            const matrix = activeObject.calcTransformMatrix();
+    
+            const _polyPoints = activeObject.points.map((p) => {
+                const pointX = p.x - activeObject.minX - activeObject.width / 2;
+                const pointY = p.y - activeObject.minY - activeObject.height / 2;
+                return new fabric.Point(pointX, pointY);
+            }).map((p) => {
+                return fabric.util.transformPoint(p, matrix);
+            });
+    
+            for (let i = 0; i < _polyPoints.length; i++) {
+                const start = _polyPoints[i];
+                const end = _polyPoints[i + 1];
+                let line = null;
+                let circle = null;
+    
+                options.prevPoint = i;
+    
+                if (end) {
+                    line = new fabric.Line([start.x, start.y, end.x, end.y], options);
+                } else {
+                    line = new fabric.Line([start.x, start.y, _polyPoints[0].x, _polyPoints[0].y], options);
+                }
+    
+                circle = new fabric.Circle({
+                    left: start.x,
+                    top: start.y,
+                    originX: 'center',
+                    originY: 'center',
+                    hasControls: false,
+                    hasBorders: false,
+                    radius: 15,
+                    fill: 'red',
+                    type: 'point',
+                });
+    
+                line.id = id++;
+                lines.push(line);
+                linesIds.push(line.id);
+    
+                circle.id = id++;
+                circle.index = i;
+    
+                circle.referenceId = {
+                    start: line.id,
+                    end: line.id - 2
+                };
+    
+                circle.linesIds = linesIds;
+    
+                lines.push(circle);
+            }
+            const points = [];
+            lines.map((line) => {
+                if (line.type === 'point') {
+                    points.push(new fabric.Point(line.left, line.top));
+                }
+            });
+    
+            return points;
         }
     };
 
